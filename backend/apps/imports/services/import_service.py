@@ -14,6 +14,7 @@ from apps.tenancy.selectors import can_write_client_records
 
 from ..models import ScanImport, ScanImportObservation, ScannerObservation
 from ..parsers.base import NormalisedObservation
+from ..parsers.nessus import NessusXmlImporter
 from ..parsers.nmap import NmapXmlImporter
 from ..parsers.zap import ZapJsonImporter
 
@@ -24,6 +25,8 @@ def parser_for_tool(tool: str):
         return NmapXmlImporter(max_size_bytes=settings.MAX_IMPORT_FILE_SIZE_BYTES)
     if normalised_tool == "zap":
         return ZapJsonImporter(max_size_bytes=settings.MAX_IMPORT_FILE_SIZE_BYTES)
+    if normalised_tool == "nessus":
+        return NessusXmlImporter(max_size_bytes=settings.MAX_IMPORT_FILE_SIZE_BYTES)
     raise ImportValidationError("Unsupported scanner import tool.")
 
 
@@ -35,6 +38,15 @@ def observation_fingerprint(*, assessment: Assessment, observation: NormalisedOb
             observation.url or "",
             observation.scanner_plugin_id or "",
             observation.raw_location or "",
+        ]
+    elif observation.source_tool == ScanImport.SourceTool.NESSUS:
+        components = [
+            str(assessment.id),
+            observation.source_tool,
+            observation.asset_identifier or observation.hostname or "",
+            observation.protocol or "",
+            str(observation.port or ""),
+            observation.scanner_plugin_id or "",
         ]
     else:
         components = [
@@ -175,6 +187,26 @@ def match_or_create_asset(*, assessment: Assessment, observation: NormalisedObse
             environment=Asset.Environment.UNKNOWN,
             criticality=Asset.Criticality.MEDIUM,
             internet_exposed=True,
+        )
+
+    if observation.source_tool == ScanImport.SourceTool.NESSUS:
+        if identifier and _looks_like_ip(identifier):
+            existing = Asset.objects.filter(assessment=assessment, ip_address=identifier).first()
+            if existing:
+                return existing
+        if hostname:
+            existing = Asset.objects.filter(assessment=assessment, hostname__iexact=hostname).first()
+            if existing:
+                return existing
+        return Asset.objects.create(
+            assessment=assessment,
+            asset_type=Asset.AssetType.HOST,
+            display_name=hostname or identifier,
+            hostname=hostname or "",
+            ip_address=identifier if identifier and _looks_like_ip(identifier) else None,
+            environment=Asset.Environment.UNKNOWN,
+            criticality=Asset.Criticality.MEDIUM,
+            internet_exposed=False,
         )
 
     if identifier and _looks_like_ip(identifier):

@@ -22,7 +22,11 @@ class ScanImportViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return visible_imports_for(self.request.user)
+        queryset = visible_imports_for(self.request.user)
+        source_tool = self.request.query_params.get("source_tool")
+        if source_tool:
+            queryset = queryset.filter(source_tool=source_tool.upper())
+        return queryset
 
     @decorators.action(detail=True, methods=["get"])
     def observations(self, request, pk=None):
