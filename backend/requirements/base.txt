@@ -5,3 +5,4 @@ django-cors-headers>=4.9,<5
 django-environ>=0.12,<1
 psycopg[binary]>=3.2,<3.3
 gunicorn>=23,<24
+defusedxml>=0.7,<1

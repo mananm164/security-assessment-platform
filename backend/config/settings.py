@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "apps.assessments.apps.AssessmentsConfig",
     "apps.findings.apps.FindingsConfig",
     "apps.audit.apps.AuditConfig",
+    "apps.imports.apps.ImportsConfig",
 ]
 
 MIDDLEWARE = [
@@ -84,6 +85,7 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DEV_SEED_EMAIL = env("DEV_SEED_EMAIL", default="consultant@sarp.local")
 DEV_SEED_PASSWORD = env("DEV_SEED_PASSWORD", default="replace-me")
+MAX_IMPORT_FILE_SIZE_BYTES = env.int("MAX_IMPORT_FILE_SIZE_BYTES", default=5 * 1024 * 1024)
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
