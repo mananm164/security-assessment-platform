@@ -22,6 +22,8 @@ class NormalisedObservation:
     scanner_plugin_id: str | None = None
     references: list[str] = field(default_factory=list)
     raw_location: str | None = None
+    candidate_cvss_score: str | None = None
+    candidate_cvss_vector: str | None = None
 
 
 class BaseImporter(ABC):

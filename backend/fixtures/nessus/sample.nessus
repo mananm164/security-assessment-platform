@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NessusClientData_v2>
+  <Report name="Fictional Training Nessus Report">
+    <ReportHost name="training-server.local">
+      <HostProperties>
+        <tag name="host-ip">10.10.10.15</tag>
+        <tag name="host-fqdn">training-server.local</tag>
+        <tag name="operating-system">Fictional Linux Server</tag>
+      </HostProperties>
+      <ReportItem port="443" svc_name="https" protocol="tcp" severity="2" pluginID="42873" pluginName="SSL Medium Strength Cipher Suites Supported">
+        <synopsis>The remote service accepts medium strength TLS cipher suites.</synopsis>
+        <description>&lt;p&gt;The fictional training service supports ciphers that should be reviewed.&lt;/p&gt;</description>
+        <solution>Disable medium strength cipher suites and prefer modern TLS configuration.</solution>
+        <cve>CVE-2024-12345</cve>
+        <cwe>CWE-326</cwe>
+        <cvss3_base_score>5.0</cvss3_base_score>
+        <cvss3_vector>CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N</cvss3_vector>
+        <see_also>https://example.test/security/tls-ciphers</see_also>
+        <plugin_output>Negotiated cipher example. token=should-not-persist</plugin_output>
+      </ReportItem>
+      <ReportItem port="22" svc_name="ssh" protocol="tcp" severity="1" pluginID="10287" pluginName="SSH Protocol Version 2 Supported">
+        <synopsis>The remote SSH service supports protocol version 2.</synopsis>
+        <description>This informational fictional finding has no CVE value.</description>
+        <solution>No immediate remediation is required for this fictional training item.</solution>
+        <cwe></cwe>
+        <plugin_output>Debug line with password=should-not-persist</plugin_output>
+      </ReportItem>
+    </ReportHost>
+  </Report>
+</NessusClientData_v2>
