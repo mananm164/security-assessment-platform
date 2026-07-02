@@ -33,7 +33,6 @@ class ImportScanCommandTests(ImportTestDataMixin, TestCase):
         self.assertEqual(ScanImport.objects.count(), 1)
         self.assertEqual(ScannerObservation.objects.count(), 3)
 
-
     def test_valid_zap_command_imports_fixture_safely(self):
         stdout = StringIO()
 
@@ -52,6 +51,27 @@ class ImportScanCommandTests(ImportTestDataMixin, TestCase):
         self.assertNotIn("attack", output)
         self.assertEqual(ScanImport.objects.count(), 1)
         self.assertEqual(ScannerObservation.objects.count(), 3)
+
+
+
+    def test_valid_nessus_command_imports_fixture_safely(self):
+        stdout = StringIO()
+
+        call_command(
+            "import_scan",
+            assessment_id=self.assessment_a.id,
+            tool="nessus",
+            file="fixtures/nessus/sample.nessus",
+            actor_email=self.consultant_a.email,
+            stdout=stdout,
+        )
+
+        output = stdout.getvalue()
+        self.assertIn("Imported Nessus report", output)
+        self.assertIn("Observations created: 2", output)
+        self.assertNotIn("token=should-not-persist", output)
+        self.assertEqual(ScanImport.objects.count(), 1)
+        self.assertEqual(ScannerObservation.objects.count(), 2)
 
     def test_unknown_actor_email_fails_safely(self):
         with self.assertRaisesMessage(CommandError, "actor email was not found"):
@@ -78,7 +98,7 @@ class ImportScanCommandTests(ImportTestDataMixin, TestCase):
             call_command(
                 "import_scan",
                 assessment_id=self.assessment_a.id,
-                tool="nessus",
+                tool="burp",
                 file=str(FIXTURE_PATH),
                 actor_email=self.consultant_a.email,
             )
