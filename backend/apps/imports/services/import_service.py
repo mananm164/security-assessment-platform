@@ -14,6 +14,7 @@ from apps.tenancy.selectors import can_write_client_records
 
 from ..models import ScanImport, ScanImportObservation, ScannerObservation
 from ..parsers.base import NormalisedObservation
+from ..parsers.burp import BurpXmlImporter
 from ..parsers.nessus import NessusXmlImporter
 from ..parsers.nmap import NmapXmlImporter
 from ..parsers.zap import ZapJsonImporter
@@ -27,6 +28,8 @@ def parser_for_tool(tool: str):
         return ZapJsonImporter(max_size_bytes=settings.MAX_IMPORT_FILE_SIZE_BYTES)
     if normalised_tool == "nessus":
         return NessusXmlImporter(max_size_bytes=settings.MAX_IMPORT_FILE_SIZE_BYTES)
+    if normalised_tool == "burp":
+        return BurpXmlImporter(max_size_bytes=settings.MAX_IMPORT_FILE_SIZE_BYTES)
     raise ImportValidationError("Unsupported scanner import tool.")
 
 
@@ -46,6 +49,14 @@ def observation_fingerprint(*, assessment: Assessment, observation: NormalisedOb
             observation.asset_identifier or observation.hostname or "",
             observation.protocol or "",
             str(observation.port or ""),
+            observation.scanner_plugin_id or "",
+        ]
+    elif observation.source_tool == ScanImport.SourceTool.BURP:
+        components = [
+            str(assessment.id),
+            observation.source_tool,
+            observation.asset_identifier or "",
+            observation.raw_location or "",
             observation.scanner_plugin_id or "",
         ]
     else:
@@ -174,7 +185,7 @@ def match_or_create_asset(*, assessment: Assessment, observation: NormalisedObse
     if not identifier and not hostname:
         return None
 
-    if observation.source_tool == ScanImport.SourceTool.ZAP and identifier:
+    if observation.source_tool in {ScanImport.SourceTool.ZAP, ScanImport.SourceTool.BURP} and identifier:
         existing = Asset.objects.filter(assessment=assessment, base_url=identifier).first()
         if existing:
             return existing
