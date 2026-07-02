@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE issues [
+  <!ELEMENT issues (issue*)>
+  <!ELEMENT issue (type,name,host,path,location,severity,confidence,issueBackground,remediationBackground,requestresponse*)>
+  <!ELEMENT type (#PCDATA)>
+  <!ELEMENT name (#PCDATA)>
+  <!ELEMENT host (#PCDATA)>
+  <!ELEMENT path (#PCDATA)>
+  <!ELEMENT location (#PCDATA)>
+  <!ELEMENT severity (#PCDATA)>
+  <!ELEMENT confidence (#PCDATA)>
+  <!ELEMENT issueBackground (#PCDATA)>
+  <!ELEMENT remediationBackground (#PCDATA)>
+  <!ELEMENT requestresponse ANY>
+]>
+<issues burpVersion="2026.7" exportTime="2026-07-02">
+  <issue>
+    <type>1049088</type>
+    <name>Insecure direct object references</name>
+    <host>https://portal.example.test</host>
+    <path method="GET">/api/invoices/12345?customer=alice#details</path>
+    <location>invoiceId</location>
+    <severity>High</severity>
+    <confidence>Firm</confidence>
+    <issueBackground>&lt;p&gt;The fictional portal exposes invoice objects by predictable identifiers.&lt;/p&gt;</issueBackground>
+    <remediationBackground>Enforce object-level authorization for every invoice lookup.</remediationBackground>
+    <requestresponse>
+      <request base64="false">GET /api/invoices/12345?customer=alice HTTP/1.1
+Host: portal.example.test
+Authorization: Bearer should-not-persist
+Cookie: session=should-not-persist
+
+password=should-not-persist</request>
+      <response base64="false">HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"invoice":"fictional response body should-not-persist"}</response>
+    </requestresponse>
+  </issue>
+  <issue>
+    <type>524288</type>
+    <name>Missing security header</name>
+    <host>https://portal.example.test:443</host>
+    <path>/account/profile?tab=settings#security</path>
+    <location>X-Frame-Options</location>
+    <severity>Low</severity>
+    <confidence>Tentative</confidence>
+    <issueBackground>The fictional application omits a defensive browser header on one page.</issueBackground>
+    <remediationBackground>Set the appropriate browser security header on this route.</remediationBackground>
+    <requestresponse>
+      <request base64="true">QXV0aG9yaXphdGlvbjogQmVhcmVyIHNob3VsZC1ub3QtcGVyc2lzdA==</request>
+      <response base64="true">Q29va2llOiBzZXNzaW9uPXNob3VsZC1ub3QtcGVyc2lzdA==</response>
+    </requestresponse>
+  </issue>
+</issues>
