@@ -25,6 +25,11 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "apps.accounts.apps.AccountsConfig",
+    "apps.common.apps.CommonConfig",
+    "apps.tenancy.apps.TenancyConfig",
+    "apps.assessments.apps.AssessmentsConfig",
+    "apps.findings.apps.FindingsConfig",
+    "apps.audit.apps.AuditConfig",
 ]
 
 MIDDLEWARE = [
@@ -89,6 +94,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
 }
 
 SIMPLE_JWT = {
