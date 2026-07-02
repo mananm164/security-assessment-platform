@@ -37,6 +37,10 @@ class ScannerObservationSerializer(serializers.ModelSerializer):
             "scanner_plugin_id",
             "fingerprint",
             "triage_status",
+            "triage_note",
+            "triaged_by",
+            "triaged_at",
+            "duplicate_of",
             "title",
             "description",
             "evidence_summary",
@@ -58,3 +62,25 @@ class ScannerObservationSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = fields
+
+
+class ObservationTriageSerializer(serializers.Serializer):
+    triage_status = serializers.ChoiceField(
+        choices=[
+            ScannerObservation.TriageStatus.CONFIRMED,
+            ScannerObservation.TriageStatus.FALSE_POSITIVE,
+            ScannerObservation.TriageStatus.DUPLICATE,
+        ]
+    )
+    triage_note = serializers.CharField(required=False, allow_blank=True, max_length=1000)
+    duplicate_of_id = serializers.IntegerField(required=False, allow_null=True)
+
+
+class ObservationPromotionSerializer(serializers.Serializer):
+    cvss_score = serializers.DecimalField(max_digits=3, decimal_places=1, min_value=0, max_value=10)
+    business_impact = serializers.CharField(max_length=4000)
+    remediation_owner = serializers.CharField(max_length=255)
+    due_date = serializers.DateField()
+    title = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    description = serializers.CharField(required=False, allow_blank=True, max_length=4000)
+    remediation = serializers.CharField(required=False, allow_blank=True, max_length=4000)

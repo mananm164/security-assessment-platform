@@ -71,6 +71,22 @@ class ScannerObservation(models.Model):
         choices=TriageStatus.choices,
         default=TriageStatus.NEW,
     )
+    triage_note = models.CharField(max_length=1000, blank=True)
+    triaged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="triaged_observations",
+    )
+    triaged_at = models.DateTimeField(null=True, blank=True)
+    duplicate_of = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="duplicates",
+    )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     evidence_summary = models.TextField(blank=True)

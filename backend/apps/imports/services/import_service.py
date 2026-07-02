@@ -15,24 +15,36 @@ from apps.tenancy.selectors import can_write_client_records
 from ..models import ScanImport, ScanImportObservation, ScannerObservation
 from ..parsers.base import NormalisedObservation
 from ..parsers.nmap import NmapXmlImporter
+from ..parsers.zap import ZapJsonImporter
 
 
 def parser_for_tool(tool: str):
     normalised_tool = tool.strip().lower()
-    if normalised_tool != "nmap":
-        raise ImportValidationError("Unsupported scanner import tool.")
-    return NmapXmlImporter(max_size_bytes=settings.MAX_IMPORT_FILE_SIZE_BYTES)
+    if normalised_tool == "nmap":
+        return NmapXmlImporter(max_size_bytes=settings.MAX_IMPORT_FILE_SIZE_BYTES)
+    if normalised_tool == "zap":
+        return ZapJsonImporter(max_size_bytes=settings.MAX_IMPORT_FILE_SIZE_BYTES)
+    raise ImportValidationError("Unsupported scanner import tool.")
 
 
 def observation_fingerprint(*, assessment: Assessment, observation: NormalisedObservation) -> str:
-    components = [
-        observation.source_tool.lower(),
-        str(assessment.id),
-        observation.asset_identifier or "",
-        observation.protocol or "",
-        str(observation.port or ""),
-        observation.scanner_plugin_id or "",
-    ]
+    if observation.source_tool == ScanImport.SourceTool.ZAP:
+        components = [
+            str(assessment.id),
+            observation.source_tool,
+            observation.url or "",
+            observation.scanner_plugin_id or "",
+            observation.raw_location or "",
+        ]
+    else:
+        components = [
+            observation.source_tool.lower(),
+            str(assessment.id),
+            observation.asset_identifier or "",
+            observation.protocol or "",
+            str(observation.port or ""),
+            observation.scanner_plugin_id or "",
+        ]
     return hashlib.sha256("|".join(components).encode("utf-8")).hexdigest()
 
 
@@ -56,7 +68,7 @@ def import_report(
     with transaction.atomic():
         scan_import = ScanImport.objects.create(
             assessment=assessment,
-            source_tool=ScanImport.SourceTool.NMAP,
+            source_tool=parser.source_tool,
             source_filename=safe_filename,
             file_sha256=file_sha256,
             imported_by=actor,
@@ -74,7 +86,7 @@ def import_report(
                 fingerprint=fingerprint,
                 defaults={
                     "asset": asset,
-                    "source_tool": ScanImport.SourceTool.NMAP,
+                    "source_tool": parser.source_tool,
                     "external_id": observation.external_id,
                     "scanner_plugin_id": observation.scanner_plugin_id or "",
                     "title": observation.title,
@@ -149,6 +161,21 @@ def match_or_create_asset(*, assessment: Assessment, observation: NormalisedObse
     hostname = observation.hostname
     if not identifier and not hostname:
         return None
+
+    if observation.source_tool == ScanImport.SourceTool.ZAP and identifier:
+        existing = Asset.objects.filter(assessment=assessment, base_url=identifier).first()
+        if existing:
+            return existing
+        return Asset.objects.create(
+            assessment=assessment,
+            asset_type=Asset.AssetType.APPLICATION,
+            display_name=hostname or identifier,
+            hostname=hostname or "",
+            base_url=identifier,
+            environment=Asset.Environment.UNKNOWN,
+            criticality=Asset.Criticality.MEDIUM,
+            internet_exposed=True,
+        )
 
     if identifier and _looks_like_ip(identifier):
         existing = Asset.objects.filter(assessment=assessment, ip_address=identifier).first()

@@ -1,0 +1,65 @@
+{
+  "@version": "2.14.0",
+  "site": [
+    {
+      "@name": "https://training-web.local:8443",
+      "@host": "training-web.local",
+      "@port": "8443",
+      "@ssl": "true",
+      "alerts": [
+        {
+          "pluginid": "40012",
+          "alertRef": "40012",
+          "alert": "Cross Site Scripting (Reflected)",
+          "name": "Cross Site Scripting (Reflected)",
+          "riskcode": "3",
+          "riskdesc": "High (Medium)",
+          "confidence": "Medium",
+          "desc": "<p>Reflected input was observed in a fictional training application.</p>",
+          "solution": "<p>Encode output and validate input in the affected handler.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/xss/</p>",
+          "cweid": "79",
+          "instances": [
+            {
+              "uri": "https://training-web.local:8443/search?q=%3Cscript%3Ealert(1)%3C/script%3E#frag",
+              "method": "GET",
+              "param": "q",
+              "attack": "<script>alert(1)</script>",
+              "evidence": "<script>alert(1)</script>",
+              "otherinfo": "Sensitive payload omitted by importer.",
+              "nodeName": "input"
+            },
+            {
+              "uri": "https://training-web.local:8443/profile?name=payload",
+              "method": "GET",
+              "param": "name",
+              "attack": "payload",
+              "evidence": "payload",
+              "nodeName": "input"
+            }
+          ]
+        },
+        {
+          "pluginid": "10020",
+          "alertRef": "10020",
+          "alert": "Missing Anti-clickjacking Header",
+          "riskcode": "2",
+          "riskdesc": "Medium (High)",
+          "confidence": "High",
+          "desc": "<p>The fictional training page does not set an anti-clickjacking header.</p>",
+          "solution": "<p>Set Content-Security-Policy frame-ancestors or X-Frame-Options.</p>",
+          "reference": "<p>https://owasp.org/www-project-secure-headers/</p>",
+          "cweid": "1021",
+          "instances": [
+            {
+              "uri": "https://training-web.local:8443/dashboard?session=secret-token",
+              "method": "GET",
+              "param": "",
+              "nodeName": "html"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
