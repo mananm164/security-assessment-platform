@@ -1,4 +1,5 @@
 import AssessmentIcon from '@mui/icons-material/AssignmentOutlined';
+import DashboardIcon from '@mui/icons-material/DashboardOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { AppBar, Box, Chip, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography } from '@mui/material';
@@ -18,6 +19,10 @@ function NavigationContent({ onNavigate }) {
         <Typography variant="caption" sx={{ color: '#94a3b8' }}>Consultant workspace</Typography>
       </Box>
       <List sx={{ px: 1 }}>
+        <ListItemButton component={Link} to="/dashboard" selected={location.pathname.startsWith('/dashboard')} onClick={onNavigate} sx={{ borderRadius: 2, color: 'inherit', '&.Mui-selected': { bgcolor: 'rgba(37,99,235,0.2)', color: 'white' } }}>
+          <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><DashboardIcon /></ListItemIcon>
+          <ListItemText primary="Dashboard" />
+        </ListItemButton>
         <ListItemButton component={Link} to="/assessments" selected={location.pathname.startsWith('/assessments')} onClick={onNavigate} sx={{ borderRadius: 2, color: 'inherit', '&.Mui-selected': { bgcolor: 'rgba(37,99,235,0.2)', color: 'white' } }}>
           <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><AssessmentIcon /></ListItemIcon>
           <ListItemText primary="Assessments" />
