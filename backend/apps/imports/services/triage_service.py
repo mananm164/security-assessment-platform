@@ -2,6 +2,8 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.audit.models import AuditLog
+from apps.audit.services import record_audit_event
 from apps.tenancy.selectors import can_write_client_records
 
 from ..models import ScannerObservation
@@ -58,5 +60,15 @@ def triage_observation(
             "triaged_at",
             "updated_at",
         ]
+    )
+    record_audit_event(
+        actor=actor,
+        client=observation.assessment.client,
+        assessment=observation.assessment,
+        action=AuditLog.Action.OBSERVATION_TRIAGED,
+        entity_type="ScannerObservation",
+        entity_id=observation.id,
+        summary=f"Observation triaged as {triage_status}.",
+        metadata={"triage_status": triage_status, "duplicate_of_id": duplicate_of.id if duplicate_of else None},
     )
     return observation

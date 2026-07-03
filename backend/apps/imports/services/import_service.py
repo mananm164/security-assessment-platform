@@ -9,6 +9,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.assessments.models import Asset, Assessment
+from apps.audit.models import AuditLog
+from apps.audit.services import record_audit_event
 from apps.common.exceptions import ImportValidationError
 from apps.tenancy.selectors import can_write_client_records
 
@@ -175,6 +177,21 @@ def import_report(
                 "status",
                 "completed_at",
             ]
+        )
+        record_audit_event(
+            actor=actor,
+            client=assessment.client,
+            assessment=assessment,
+            action=AuditLog.Action.IMPORT_CREATED,
+            entity_type="ScanImport",
+            entity_id=scan_import.id,
+            summary=f"Imported {scan_import.source_tool} report {scan_import.source_filename}.",
+            metadata={
+                "source_tool": scan_import.source_tool,
+                "source_filename": scan_import.source_filename,
+                "observations_created": created_count,
+                "observations_updated": updated_count,
+            },
         )
         return scan_import
 

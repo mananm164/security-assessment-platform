@@ -2,6 +2,8 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.audit.models import AuditLog
+from apps.audit.services import record_audit_event
 from apps.findings.models import Finding
 from apps.tenancy.selectors import can_write_client_records
 
@@ -56,4 +58,18 @@ def promote_observation_to_finding(
     observation.triaged_by = actor
     observation.triaged_at = timezone.now()
     observation.save(update_fields=["triage_status", "triaged_by", "triaged_at", "updated_at"])
+    record_audit_event(
+        actor=actor,
+        client=observation.assessment.client,
+        assessment=observation.assessment,
+        action=AuditLog.Action.OBSERVATION_PROMOTED,
+        entity_type="Finding",
+        entity_id=finding.id,
+        summary=f"Observation promoted to finding {finding.title}.",
+        metadata={
+            "finding_id": finding.id,
+            "scanner_observation_id": observation.id,
+            "severity": finding.severity,
+        },
+    )
     return finding
