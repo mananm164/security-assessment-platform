@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "apps.assessments.apps.AssessmentsConfig",
     "apps.findings.apps.FindingsConfig",
     "apps.audit.apps.AuditConfig",
+    "apps.dashboard.apps.DashboardConfig",
     "apps.imports.apps.ImportsConfig",
 ]
 
