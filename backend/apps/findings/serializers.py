@@ -33,11 +33,16 @@ class FindingSerializer(serializers.ModelSerializer):
             "remediation_owner",
             "status",
             "due_date",
+            "priority_score",
+            "priority_label",
+            "priority_explanation",
+            "priority_reason",
+            "priority_computed_at",
             "created_by",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "severity", "created_by", "created_at", "updated_at")
+        read_only_fields = ("id", "severity", "priority_score", "priority_label", "priority_explanation", "priority_reason", "priority_computed_at", "created_by", "created_at", "updated_at")
 
     def validate_cvss_score(self, value):
         if value < Decimal("0.0") or value > Decimal("10.0"):

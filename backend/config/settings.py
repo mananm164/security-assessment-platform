@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "apps.tenancy.apps.TenancyConfig",
     "apps.assessments.apps.AssessmentsConfig",
     "apps.findings.apps.FindingsConfig",
+    "apps.intelligence.apps.IntelligenceConfig",
     "apps.audit.apps.AuditConfig",
     "apps.dashboard.apps.DashboardConfig",
     "apps.imports.apps.ImportsConfig",
@@ -107,3 +108,16 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
 }
+
+
+AI_PROVIDER = env("AI_PROVIDER", default="mock")
+AI_MODEL = env("AI_MODEL", default="qwen3:4b")
+EMBEDDING_PROVIDER = env("EMBEDDING_PROVIDER", default="mock")
+EMBEDDING_MODEL = env("EMBEDDING_MODEL", default="embeddinggemma")
+EMBEDDING_DIMENSIONS = env.int("EMBEDDING_DIMENSIONS", default=768)
+OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="http://host.docker.internal:11434")
+INTELLIGENCE_CACHE_TTL_HOURS = env.int("INTELLIGENCE_CACHE_TTL_HOURS", default=24)
+NVD_API_KEY = env("NVD_API_KEY", default="")
+NVD_API_BASE_URL = env("NVD_API_BASE_URL", default="https://services.nvd.nist.gov/rest/json/cves/2.0")
+CISA_KEV_URL = env("CISA_KEV_URL", default="https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json")
+EPSS_API_BASE_URL = env("EPSS_API_BASE_URL", default="https://api.first.org/data/v1/epss")

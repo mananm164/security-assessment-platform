@@ -7,3 +7,4 @@ psycopg[binary]>=3.2,<3.3
 gunicorn>=23,<24
 defusedxml>=0.7,<1
 lxml>=5.3,<6
+pgvector>=0.3,<0.4

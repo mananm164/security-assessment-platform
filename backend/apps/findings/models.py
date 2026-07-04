@@ -13,6 +13,12 @@ class Finding(models.Model):
         HIGH = "HIGH", "High"
         CRITICAL = "CRITICAL", "Critical"
 
+    class PriorityLabel(models.TextChoices):
+        URGENT = "URGENT", "Urgent"
+        HIGH = "HIGH", "High"
+        MEDIUM = "MEDIUM", "Medium"
+        LOW = "LOW", "Low"
+
     class Status(models.TextChoices):
         OPEN = "OPEN", "Open"
         IN_PROGRESS = "IN_PROGRESS", "In progress"
@@ -46,6 +52,11 @@ class Finding(models.Model):
     remediation_owner = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
     due_date = models.DateField(null=True, blank=True)
+    priority_score = models.PositiveSmallIntegerField(null=True, blank=True)
+    priority_label = models.CharField(max_length=20, choices=PriorityLabel.choices, null=True, blank=True)
+    priority_explanation = models.JSONField(default=dict, blank=True)
+    priority_reason = models.CharField(max_length=500, null=True, blank=True)
+    priority_computed_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
