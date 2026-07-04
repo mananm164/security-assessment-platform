@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "apps.assessments.apps.AssessmentsConfig",
     "apps.findings.apps.FindingsConfig",
     "apps.intelligence.apps.IntelligenceConfig",
+    "apps.ai.apps.AiConfig",
     "apps.audit.apps.AuditConfig",
     "apps.dashboard.apps.DashboardConfig",
     "apps.imports.apps.ImportsConfig",
