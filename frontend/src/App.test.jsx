@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom';
 import { vi } from 'vitest';
 import ProtectedRoute from './auth/ProtectedRoute';
 import AppShell from './layouts/AppShell';
+import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import AssessmentsPage from './pages/AssessmentsPage';
 import { ObservationsTable } from './features/assessments/ObservationsTab';
@@ -11,8 +12,10 @@ import ObservationDetailDrawer from './features/observations/ObservationDetailDr
 import ObservationTriageDialog from './features/observations/ObservationTriageDialog';
 import { renderWithProviders } from './test/renderWithProviders';
 import { listAssessments } from './api/assessments';
+import { getDashboardSummary } from './api/dashboard';
 
 vi.mock('./api/assessments', () => ({ listAssessments: vi.fn() }));
+vi.mock('./api/dashboard', () => ({ getDashboardSummary: vi.fn() }));
 
 function auth(overrides = {}) {
   return {
@@ -54,6 +57,23 @@ test('protected route redirects to login without authenticated state', () => {
   expect(screen.getByText('Login route')).toBeInTheDocument();
 });
 
+
+test('dashboard displays management metrics from the API', async () => {
+  getDashboardSummary.mockResolvedValue({
+    open_findings: 3,
+    critical_high_findings: 2,
+    overdue_remediation: 1,
+    findings_by_severity: { HIGH: 2, LOW: 1 },
+    findings_by_scanner_source: { ZAP: 1, NESSUS: 1 },
+    recent_imports: [],
+  });
+  renderWithProviders(<DashboardPage />);
+  expect(await screen.findByText('Open findings')).toBeInTheDocument();
+  expect(screen.getByText('3')).toBeInTheDocument();
+  expect(screen.getByText('Critical/high findings')).toBeInTheDocument();
+  expect(screen.getByText('Overdue remediation')).toBeInTheDocument();
+});
+
 test('assessment list displays API data', async () => {
   listAssessments.mockResolvedValue({ items: [{ id: 1, client: 7, name: 'Northwind Review', framework: 'OWASP', status: 'ACTIVE', start_date: '2026-07-01', end_date: null }], count: 1 });
   renderWithProviders(<AssessmentsPage />);
@@ -90,5 +110,6 @@ test('triage dialog requires a note for false positive', async () => {
 test('app shell hides raw observation navigation for a client role', () => {
   renderWithProviders(<Routes><Route element={<AppShell />}><Route path="/" element={<div>Home</div>} /></Route></Routes>, { authValue: auth({ user: { email: 'client@example.test', role: 'CLIENT' } }) });
   expect(screen.getAllByText('Assessments').length).toBeGreaterThan(0);
+  expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
   expect(screen.queryByText('Scanner Observations')).not.toBeInTheDocument();
 });
