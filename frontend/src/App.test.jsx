@@ -10,12 +10,21 @@ import AssessmentsPage from './pages/AssessmentsPage';
 import { ObservationsTable } from './features/assessments/ObservationsTab';
 import ObservationDetailDrawer from './features/observations/ObservationDetailDrawer';
 import ObservationTriageDialog from './features/observations/ObservationTriageDialog';
+import FindingDetail from './features/findings/FindingDetail';
 import { renderWithProviders } from './test/renderWithProviders';
 import { listAssessments } from './api/assessments';
 import { getDashboardSummary } from './api/dashboard';
+import { getFinding } from './api/findings';
+import { listAuditLogs } from './api/audit';
+import { getFindingIntelligence, refreshFindingIntelligence } from './api/intelligence';
+import { generateRemediationDraft, listAIArtifacts } from './api/ai';
 
 vi.mock('./api/assessments', () => ({ listAssessments: vi.fn() }));
 vi.mock('./api/dashboard', () => ({ getDashboardSummary: vi.fn() }));
+vi.mock('./api/findings', () => ({ getFinding: vi.fn(), updateFinding: vi.fn() }));
+vi.mock('./api/audit', () => ({ listAuditLogs: vi.fn() }));
+vi.mock('./api/intelligence', () => ({ getFindingIntelligence: vi.fn(), refreshFindingIntelligence: vi.fn() }));
+vi.mock('./api/ai', () => ({ generateRemediationDraft: vi.fn(), listAIArtifacts: vi.fn() }));
 
 function auth(overrides = {}) {
   return {
@@ -112,4 +121,80 @@ test('app shell hides raw observation navigation for a client role', () => {
   expect(screen.getAllByText('Assessments').length).toBeGreaterThan(0);
   expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
   expect(screen.queryByText('Scanner Observations')).not.toBeInTheDocument();
+});
+
+
+const findingPayload = {
+  id: 42,
+  assessment: 7,
+  affected_asset: 3,
+  title: 'Access control bypass',
+  description: 'Fictional BOLA issue.',
+  cve_id: 'CVE-2024-1234',
+  cvss_score: '8.8',
+  severity: 'HIGH',
+  status: 'OPEN',
+  due_date: '2026-08-01',
+  business_impact: 'Fictional impact.',
+  remediation: 'Fix authorization checks.',
+  remediation_owner: 'Platform Team',
+  priority_score: 98,
+  priority_label: 'URGENT',
+  priority_reason: 'Urgent because the finding has a high CVSS score and CISA KEV listing.',
+  created_at: '2026-07-04T10:00:00Z',
+};
+
+function prepareFindingDetailMocks() {
+  getFinding.mockResolvedValue(findingPayload);
+  listAuditLogs.mockResolvedValue({ items: [] });
+  getFindingIntelligence.mockResolvedValue({
+    finding: findingPayload,
+    intelligence: {
+      cve_id: 'CVE-2024-1234',
+      nvd_cvss_score: '8.8',
+      kev_listed: true,
+      epss_score: '0.7400',
+      epss_percentile: '0.9600',
+      source_retrieved_at: '2026-07-04T10:00:00Z',
+    },
+    used_cache: false,
+  });
+  listAIArtifacts.mockResolvedValue([{
+    id: 9,
+    content: 'Draft — human review required\n\nExecutive summary\nReview the access control issue.',
+    sources: [{ rank: 1, title: 'Access-control remediation guidance', source_name: 'OWASP Cheat Sheet Series', source_url: 'https://cheatsheetseries.owasp.org/' }],
+  }]);
+}
+
+test('finding detail renders CVE intelligence and refreshes cached priority', async () => {
+  const user = userEvent.setup();
+  prepareFindingDetailMocks();
+  refreshFindingIntelligence.mockResolvedValue({ finding: { ...findingPayload, priority_score: 99 }, intelligence: { cve_id: 'CVE-2024-1234', kev_listed: true, nvd_cvss_score: '8.8' }, used_cache: false });
+
+  renderWithProviders(<Routes><Route path="/findings/:findingId" element={<FindingDetail />} /></Routes>, { route: '/findings/42' });
+
+  expect(await screen.findByText('CVE intelligence')).toBeInTheDocument();
+  expect(screen.getByText('CVE-2024-1234')).toBeInTheDocument();
+  expect(screen.getByText(/URGENT 98/)).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: /refresh intelligence/i }));
+  expect(await screen.findByText(/intelligence refreshed/i)).toBeInTheDocument();
+});
+
+test('finding detail renders remediation draft sources and generate action', async () => {
+  const user = userEvent.setup();
+  prepareFindingDetailMocks();
+  generateRemediationDraft.mockResolvedValue({
+    id: 10,
+    content: 'Draft — human review required\n\nExecutive summary\nGenerated draft.',
+    sources: [{ rank: 1, title: 'Vulnerability validation guidance', source_name: 'NIST', source_url: 'https://csrc.nist.gov/' }],
+  });
+
+  renderWithProviders(<Routes><Route path="/findings/:findingId" element={<FindingDetail />} /></Routes>, { route: '/findings/42' });
+
+  expect(await screen.findByText('AI-assisted remediation')).toBeInTheDocument();
+  expect(screen.getAllByText(/draft — human review required/i).length).toBeGreaterThan(0);
+  expect(screen.getByText('Access-control remediation guidance')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: /generate draft/i }));
+  expect(await screen.findByText(/remediation draft generated/i)).toBeInTheDocument();
+  expect(screen.getByText('Vulnerability validation guidance')).toBeInTheDocument();
 });
