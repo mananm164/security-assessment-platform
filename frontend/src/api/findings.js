@@ -14,3 +14,9 @@ export async function updateFinding(id, payload) {
   const response = await apiClient.patch(`/findings/${id}/`, payload);
   return response.data;
 }
+
+
+export async function listFindingAuditLogs(id) {
+  const response = await apiClient.get(`/findings/${id}/audit-logs/`);
+  return normalisePage(response.data);
+}
