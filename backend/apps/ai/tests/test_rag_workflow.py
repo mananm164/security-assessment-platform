@@ -14,6 +14,7 @@ from apps.ai.services.knowledge_ingestion_service import KnowledgeIngestionServi
 from apps.ai.services.remediation_service import RemediationService, safe_finding_context
 from apps.ai.services.retrieval_service import RetrievalService
 from apps.assessments.models import Asset
+from apps.audit.models import AuditLog
 from apps.findings.models import Finding
 from apps.imports.tests.helpers import ImportTestDataMixin
 
@@ -88,6 +89,7 @@ class RemediationWorkflowTests(ImportTestDataMixin, TestCase):
 
         self.assertIn("Draft — human review required", artifact.content)
         self.assertEqual(artifact.sources.count(), 3)
+        self.assertTrue(AuditLog.objects.filter(action=AuditLog.Action.AI_REMEDIATION_DRAFT_GENERATED, entity_id=self.finding.id).exists())
         self.assertNotIn("prompt", artifact.content.lower())
 
     def test_safe_context_excludes_raw_unsafe_fields(self):

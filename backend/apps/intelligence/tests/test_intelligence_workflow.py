@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.assessments.models import Asset
+from apps.audit.models import AuditLog
 from apps.findings.models import Finding
 from apps.imports.tests.helpers import ImportTestDataMixin
 from apps.intelligence.models import VulnerabilityIntel
@@ -146,6 +147,7 @@ class IntelligenceWorkflowTests(ImportTestDataMixin, TestCase):
             self.api.force_authenticate(self.consultant_a)
             ok = self.api.post(reverse("finding-intelligence-refresh", args=[self.finding.id]), {}, format="json")
             self.assertEqual(ok.status_code, status.HTTP_200_OK)
+            self.assertTrue(AuditLog.objects.filter(action=AuditLog.Action.INTELLIGENCE_REFRESHED, entity_id=self.finding.id).exists())
 
         self.api.force_authenticate(self.manager_a)
         denied = self.api.post(reverse("finding-intelligence-refresh", args=[self.finding.id]), {}, format="json")

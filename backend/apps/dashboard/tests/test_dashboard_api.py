@@ -36,6 +36,8 @@ class DashboardApiTests(ImportTestDataMixin, TestCase):
             remediation="Fictional remediation.",
             remediation_owner="Web Team",
             due_date=timezone.localdate() - timedelta(days=1),
+            priority_score=92,
+            priority_label="URGENT",
             created_by=self.consultant_a,
         )
         FindingSource.objects.create(
@@ -52,12 +54,13 @@ class DashboardApiTests(ImportTestDataMixin, TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         body = response.json()
-        self.assertEqual(body["open_findings"], 1)
-        self.assertEqual(body["critical_high_findings"], 1)
-        self.assertEqual(body["overdue_remediation"], 1)
-        self.assertEqual(body["findings_by_severity"]["CRITICAL"], 1)
-        self.assertEqual(body["findings_by_scanner_source"]["NMAP"], 1)
+        self.assertEqual(body["metrics"]["open_findings"], 1)
+        self.assertEqual(body["metrics"]["critical_high_findings"], 1)
+        self.assertEqual(body["metrics"]["overdue_remediations"], 1)
+        self.assertEqual(body["severity_distribution"][0]["severity"], "CRITICAL")
+        self.assertEqual(body["source_distribution"][0]["source_tool"], "NMAP")
         self.assertEqual(len(body["recent_imports"]), 1)
+        self.assertEqual(body["top_priority_findings"][0]["id"], self.finding.id)
 
     def test_client_dashboard_is_read_only_and_hides_raw_imports(self):
         self.api.force_authenticate(self.client_user_a)
@@ -66,8 +69,10 @@ class DashboardApiTests(ImportTestDataMixin, TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         body = response.json()
-        self.assertEqual(body["open_findings"], 1)
+        self.assertEqual(body["metrics"]["open_findings"], 1)
+        self.assertNotIn("recent_imports", body["metrics"])
         self.assertEqual(body["recent_imports"], [])
+        self.assertNotIn("recent_activity", body)
 
     def test_unassigned_consultant_does_not_see_other_client_metrics(self):
         self.api.force_authenticate(self.consultant_b)
@@ -75,4 +80,4 @@ class DashboardApiTests(ImportTestDataMixin, TestCase):
         response = self.api.get(reverse("dashboard-summary"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()["open_findings"], 0)
+        self.assertEqual(response.json()["metrics"]["open_findings"], 0)

@@ -62,16 +62,16 @@ class AuditWorkflowTests(ImportTestDataMixin, TestCase):
         self.assertEqual(triage_response.status_code, status.HTTP_200_OK)
         self.assertEqual(promote_response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(update_response.status_code, status.HTTP_200_OK)
-        self.assertTrue(AuditLog.objects.filter(action=AuditLog.Action.IMPORT_CREATED, entity_id=scan_import.id).exists())
+        self.assertTrue(AuditLog.objects.filter(action=AuditLog.Action.SCAN_IMPORT_CREATED, entity_id=scan_import.id).exists())
         self.assertTrue(AuditLog.objects.filter(action=AuditLog.Action.OBSERVATION_TRIAGED, entity_id=observation.id).exists())
         self.assertTrue(AuditLog.objects.filter(action=AuditLog.Action.OBSERVATION_PROMOTED, entity_id=finding_id).exists())
         update_log = AuditLog.objects.get(action=AuditLog.Action.FINDING_UPDATED, entity_id=finding_id)
-        self.assertIn("status", update_log.metadata["changed_fields"])
-        self.assertNotIn("Updated fictional impact", str(update_log.metadata))
+        self.assertIn("status", update_log.safe_metadata["changed_fields"])
+        self.assertNotIn("Updated fictional impact", str(update_log.safe_metadata))
 
     def test_audit_log_api_is_tenant_scoped(self):
         self.import_sample()
-        log = AuditLog.objects.get(action=AuditLog.Action.IMPORT_CREATED)
+        log = AuditLog.objects.get(action=AuditLog.Action.SCAN_IMPORT_CREATED)
 
         self.api.force_authenticate(self.consultant_a)
         allowed = self.api.get(reverse("auditlog-list"), {"assessment": self.assessment_a.id})
@@ -97,7 +97,7 @@ class AuditWorkflowTests(ImportTestDataMixin, TestCase):
         )
         self.api.force_authenticate(self.manager_a)
 
-        audit_response = self.api.get(reverse("auditlog-list"), {"entity_type": "ScanImport", "entity_id": scan_import.id})
+        audit_response = self.api.get(reverse("auditlog-list"), {"entity_type": "SCAN_IMPORT", "entity_id": scan_import.id})
         patch_response = self.api.patch(reverse("finding-detail", args=[finding.id]), {"status": "IN_PROGRESS"}, format="json")
 
         self.assertEqual(audit_response.status_code, status.HTTP_200_OK)
