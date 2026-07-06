@@ -24,6 +24,7 @@ class Finding(models.Model):
         IN_PROGRESS = "IN_PROGRESS", "In progress"
         ACCEPTED_RISK = "ACCEPTED_RISK", "Accepted risk"
         MITIGATED = "MITIGATED", "Mitigated"
+        VALIDATION_PENDING = "VALIDATION_PENDING", "Validation pending"
         CLOSED = "CLOSED", "Closed"
 
     assessment = models.ForeignKey(
@@ -57,6 +58,25 @@ class Finding(models.Model):
     priority_explanation = models.JSONField(default=dict, blank=True)
     priority_reason = models.CharField(max_length=500, null=True, blank=True)
     priority_computed_at = models.DateTimeField(null=True, blank=True)
+    validation_evidence = models.TextField(blank=True)
+    validated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="validated_findings",
+    )
+    validated_at = models.DateTimeField(null=True, blank=True)
+    risk_acceptance_reason = models.TextField(blank=True)
+    risk_accepted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="risk_accepted_findings",
+    )
+    risk_accepted_at = models.DateTimeField(null=True, blank=True)
+    risk_review_due_date = models.DateField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

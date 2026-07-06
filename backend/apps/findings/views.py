@@ -1,13 +1,19 @@
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
+from apps.accounts.models import User
 from apps.audit.models import AuditLog
+from apps.audit.serializers import AuditLogSerializer
+from apps.audit.selectors import visible_audit_logs_for
 from apps.audit.services import record_audit_event
 from apps.tenancy.selectors import can_write_client_records
 
 from .selectors import visible_findings_for
 from .serializers import FindingSerializer
+from .services.finding_lifecycle_service import update_finding_lifecycle
 
 
 class FindingViewSet(viewsets.ModelViewSet):
@@ -32,30 +38,35 @@ class FindingViewSet(viewsets.ModelViewSet):
         assessment = serializer.validated_data["assessment"]
         if not can_write_client_records(self.request.user, assessment.client):
             raise PermissionDenied("You cannot create findings for this assessment.")
-        serializer.save(created_by=self.request.user)
+        finding = serializer.save(created_by=self.request.user)
+        record_audit_event(
+            actor=self.request.user,
+            client=finding.assessment.client,
+            assessment=finding.assessment,
+            action=AuditLog.Action.FINDING_CREATED,
+            entity_type="FINDING",
+            entity_id=finding.id,
+            summary=f"Finding created: {finding.title}.",
+            safe_metadata={"severity": finding.severity, "status": finding.status},
+        )
 
     def perform_update(self, serializer):
-        finding = serializer.instance
-        assessment = serializer.validated_data.get("assessment", finding.assessment)
-        if not can_write_client_records(self.request.user, assessment.client):
-            raise PermissionDenied("You cannot update findings for this assessment.")
-        tracked_fields = ["status", "remediation_owner", "due_date", "business_impact", "remediation"]
-        before = {field: getattr(finding, field) for field in tracked_fields}
-        updated = serializer.save()
-        changed_fields = [field for field in tracked_fields if before[field] != getattr(updated, field)]
-        if changed_fields:
-            record_audit_event(
-                actor=self.request.user,
-                client=updated.assessment.client,
-                assessment=updated.assessment,
-                action=AuditLog.Action.FINDING_UPDATED,
-                entity_type="Finding",
-                entity_id=updated.id,
-                summary=f"Finding updated: {', '.join(changed_fields)}.",
-                metadata={
-                    "changed_fields": changed_fields,
-                    "status": updated.status,
-                    "remediation_owner": updated.remediation_owner,
-                    "due_date": updated.due_date.isoformat() if updated.due_date else None,
-                },
-            )
+        updated = update_finding_lifecycle(
+            finding=serializer.instance,
+            actor=self.request.user,
+            changes=serializer.validated_data,
+        )
+        serializer.instance = updated
+
+    @action(detail=True, methods=["get"], url_path="audit-logs")
+    def audit_logs(self, request, pk=None):
+        finding = self.get_object()
+        if request.user.role == User.Role.CLIENT:
+            raise PermissionDenied("Client users cannot view internal audit timelines.")
+        logs = visible_audit_logs_for(request.user).filter(entity_type="FINDING", entity_id=finding.id)
+        page = self.paginate_queryset(logs)
+        if page is not None:
+            serializer = AuditLogSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = AuditLogSerializer(logs, many=True)
+        return Response(serializer.data)

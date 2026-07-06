@@ -1,8 +1,9 @@
-from .models import AuditLog
+from apps.accounts.models import User
 from apps.tenancy.selectors import visible_clients_for
 
+from .models import AuditLog
 
-RAW_AUDIT_ROLES = {"ADMIN", "CONSULTANT", "MANAGER", "CLIENT"}
+RAW_AUDIT_ROLES = {User.Role.ADMIN, User.Role.CONSULTANT, User.Role.MANAGER}
 
 
 def visible_audit_logs_for(user):
