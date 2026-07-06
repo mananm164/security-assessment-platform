@@ -11,17 +11,19 @@ import { ObservationsTable } from './features/assessments/ObservationsTab';
 import ObservationDetailDrawer from './features/observations/ObservationDetailDrawer';
 import ObservationTriageDialog from './features/observations/ObservationTriageDialog';
 import FindingDetail from './features/findings/FindingDetail';
+import FindingUpdateDialog from './features/findings/FindingUpdateDialog';
+import AuditTimeline from './features/findings/AuditTimeline';
 import { renderWithProviders } from './test/renderWithProviders';
 import { listAssessments } from './api/assessments';
 import { getDashboardSummary } from './api/dashboard';
-import { getFinding } from './api/findings';
+import { getFinding, listFindingAuditLogs, updateFinding } from './api/findings';
 import { listAuditLogs } from './api/audit';
 import { getFindingIntelligence, refreshFindingIntelligence } from './api/intelligence';
 import { generateRemediationDraft, listAIArtifacts } from './api/ai';
 
 vi.mock('./api/assessments', () => ({ listAssessments: vi.fn() }));
 vi.mock('./api/dashboard', () => ({ getDashboardSummary: vi.fn() }));
-vi.mock('./api/findings', () => ({ getFinding: vi.fn(), updateFinding: vi.fn() }));
+vi.mock('./api/findings', () => ({ getFinding: vi.fn(), updateFinding: vi.fn(), listFindingAuditLogs: vi.fn() }));
 vi.mock('./api/audit', () => ({ listAuditLogs: vi.fn() }));
 vi.mock('./api/intelligence', () => ({ getFindingIntelligence: vi.fn(), refreshFindingIntelligence: vi.fn() }));
 vi.mock('./api/ai', () => ({ generateRemediationDraft: vi.fn(), listAIArtifacts: vi.fn() }));
@@ -69,18 +71,19 @@ test('protected route redirects to login without authenticated state', () => {
 
 test('dashboard displays management metrics from the API', async () => {
   getDashboardSummary.mockResolvedValue({
-    open_findings: 3,
-    critical_high_findings: 2,
-    overdue_remediation: 1,
-    findings_by_severity: { HIGH: 2, LOW: 1 },
-    findings_by_scanner_source: { ZAP: 1, NESSUS: 1 },
+    metrics: { open_findings: 3, critical_high_findings: 2, overdue_remediations: 1, recent_imports: 0 },
+    severity_distribution: [{ severity: 'HIGH', count: 2 }, { severity: 'LOW', count: 1 }],
+    status_distribution: [{ status: 'OPEN', count: 3 }],
+    source_distribution: [{ source_tool: 'ZAP', finding_count: 1 }, { source_tool: 'NESSUS', finding_count: 1 }],
+    top_priority_findings: [],
     recent_imports: [],
+    recent_activity: [],
   });
   renderWithProviders(<DashboardPage />);
   expect(await screen.findByText('Open findings')).toBeInTheDocument();
-  expect(screen.getByText('3')).toBeInTheDocument();
-  expect(screen.getByText('Critical/high findings')).toBeInTheDocument();
-  expect(screen.getByText('Overdue remediation')).toBeInTheDocument();
+  expect(screen.getAllByText('3').length).toBeGreaterThan(0);
+  expect(screen.getByText('Critical / High')).toBeInTheDocument();
+  expect(screen.getByText('Overdue')).toBeInTheDocument();
 });
 
 test('assessment list displays API data', async () => {
@@ -146,6 +149,7 @@ const findingPayload = {
 
 function prepareFindingDetailMocks() {
   getFinding.mockResolvedValue(findingPayload);
+  updateFinding.mockResolvedValue(findingPayload);
   listAuditLogs.mockResolvedValue({ items: [] });
   getFindingIntelligence.mockResolvedValue({
     finding: findingPayload,
@@ -159,6 +163,7 @@ function prepareFindingDetailMocks() {
     },
     used_cache: false,
   });
+  listFindingAuditLogs.mockResolvedValue({ items: [] });
   listAIArtifacts.mockResolvedValue([{
     id: 9,
     content: 'Draft — human review required\n\nExecutive summary\nReview the access control issue.',
@@ -197,4 +202,67 @@ test('finding detail renders remediation draft sources and generate action', asy
   await user.click(screen.getByRole('button', { name: /generate draft/i }));
   expect(await screen.findByText(/remediation draft generated/i)).toBeInTheDocument();
   expect(screen.getByText('Vulnerability validation guidance')).toBeInTheDocument();
+});
+
+
+test('dashboard displays a safe error state', async () => {
+  getDashboardSummary.mockRejectedValue({ response: { status: 500 } });
+  renderWithProviders(<DashboardPage />);
+  expect(await screen.findByText(/service is unavailable/i)).toBeInTheDocument();
+});
+
+test('client dashboard response omits recent imports card', async () => {
+  getDashboardSummary.mockResolvedValue({
+    metrics: { open_findings: 1, critical_high_findings: 0, overdue_remediations: 0 },
+    severity_distribution: [],
+    status_distribution: [],
+    source_distribution: [],
+    top_priority_findings: [],
+    recent_imports: [],
+  });
+  renderWithProviders(<DashboardPage />, { authValue: auth({ user: { email: 'client@example.test', role: 'CLIENT' } }) });
+  expect(await screen.findByText('Risk Dashboard')).toBeInTheDocument();
+  expect(screen.queryByText('Recent imports')).not.toBeInTheDocument();
+});
+
+test('lifecycle dialog sends remediation patch payload', async () => {
+  const user = userEvent.setup();
+  const onSubmit = vi.fn();
+  renderWithProviders(<FindingUpdateDialog open finding={findingPayload} loading={false} onClose={vi.fn()} onSubmit={onSubmit} />);
+  await user.clear(screen.getByLabelText(/remediation owner/i));
+  await user.type(screen.getByLabelText(/remediation owner/i), 'Platform Team');
+  await user.click(screen.getByRole('button', { name: /^save$/i }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ remediation_owner: 'Platform Team', status: 'OPEN' }));
+});
+
+test('accepted-risk lifecycle form requires reason and review date', async () => {
+  const user = userEvent.setup();
+  const onSubmit = vi.fn();
+  renderWithProviders(<FindingUpdateDialog open finding={{ ...findingPayload, status: 'ACCEPTED_RISK' }} loading={false} onClose={vi.fn()} onSubmit={onSubmit} />);
+  await user.clear(screen.getByLabelText(/accepted-risk reason/i));
+  await user.click(screen.getByRole('button', { name: /^save$/i }));
+  expect(await screen.findByText(/accepted risk requires/i)).toBeInTheDocument();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+test('lifecycle dialog displays backend validation error safely', () => {
+  renderWithProviders(<FindingUpdateDialog open finding={findingPayload} loading={false} submitError="Validation evidence is required before closing a finding." onClose={vi.fn()} onSubmit={vi.fn()} />);
+  expect(screen.getByText(/validation evidence is required/i)).toBeInTheDocument();
+});
+
+test('audit timeline renders readable safe activity', () => {
+  renderWithProviders(<AuditTimeline logs={[{ id: 1, action: 'FINDING_STATUS_CHANGED', actor: { id: 2, email: 'consultant@example.test' }, safe_metadata: { old_status: 'OPEN', new_status: 'IN_PROGRESS' }, created_at: '2026-07-06T10:00:00Z' }]} />);
+  expect(screen.getAllByText(/status changed/i).length).toBeGreaterThan(0);
+  expect(screen.queryByText(/old_status/)).not.toBeInTheDocument();
+});
+
+test('finding detail surfaces close validation error from backend', async () => {
+  const user = userEvent.setup();
+  prepareFindingDetailMocks();
+  updateFinding.mockRejectedValue({ response: { status: 400, data: { validation_evidence: ['Validation evidence is required before closing a finding.'] } } });
+  renderWithProviders(<Routes><Route path="/findings/:findingId" element={<FindingDetail />} /></Routes>, { route: '/findings/42' });
+  await screen.findByText('CVE intelligence');
+  await user.click(screen.getByRole('button', { name: /update finding/i }));
+  await user.click(screen.getByRole('button', { name: /^save$/i }));
+  expect((await screen.findAllByText(/validation evidence is required/i)).length).toBeGreaterThan(0);
 });
