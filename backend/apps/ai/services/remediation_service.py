@@ -6,6 +6,8 @@ from django.db import transaction
 from rest_framework.exceptions import APIException, ValidationError
 
 from apps.ai.models import AIArtifact, AIArtifactSource
+from apps.audit.models import AuditLog
+from apps.audit.services import record_audit_event
 from apps.ai.providers.factory import get_ai_provider
 from .retrieval_service import RetrievalService
 
@@ -87,4 +89,18 @@ class RemediationService:
                 similarity=similarity,
                 excerpt=chunk.content[:500],
             )
+        record_audit_event(
+            actor=actor,
+            client=finding.assessment.client,
+            assessment=finding.assessment,
+            action=AuditLog.Action.AI_REMEDIATION_DRAFT_GENERATED,
+            entity_type="FINDING",
+            entity_id=finding.id,
+            summary="AI remediation draft generated.",
+            safe_metadata={
+                "provider": artifact.provider,
+                "model": artifact.model,
+                "artifact_id": artifact.id,
+            },
+        )
         return artifact

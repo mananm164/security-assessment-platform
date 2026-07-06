@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
+from apps.audit.models import AuditLog
+from apps.audit.services import record_audit_event
 from apps.tenancy.selectors import can_write_client_records, user_is_admin
 from .selectors import visible_finding_for_intelligence
 from .serializers import FindingIntelligenceSerializer
@@ -37,5 +39,19 @@ class RefreshFindingIntelligenceView(FindingIntelligenceView):
             raise PermissionDenied("Only administrators can force refresh intelligence.")
         result = IntelligenceService().refresh_for_finding(finding, force=force)
         finding.refresh_from_db()
+        record_audit_event(
+            actor=request.user,
+            client=finding.assessment.client,
+            assessment=finding.assessment,
+            action=AuditLog.Action.INTELLIGENCE_REFRESHED,
+            entity_type="FINDING",
+            entity_id=finding.id,
+            summary=f"Intelligence refreshed for {finding.cve_id}.",
+            safe_metadata={
+                "priority_score": finding.priority_score,
+                "priority_label": finding.priority_label,
+                "used_cache": result.used_cache,
+            },
+        )
         serializer = FindingIntelligenceSerializer({"finding": finding, "intelligence": result.intel, "used_cache": result.used_cache})
         return Response(serializer.data, status=status.HTTP_200_OK)

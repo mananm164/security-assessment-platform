@@ -182,11 +182,11 @@ def import_report(
             actor=actor,
             client=assessment.client,
             assessment=assessment,
-            action=AuditLog.Action.IMPORT_CREATED,
-            entity_type="ScanImport",
+            action=AuditLog.Action.SCAN_IMPORT_CREATED,
+            entity_type="SCAN_IMPORT",
             entity_id=scan_import.id,
             summary=f"Imported {scan_import.source_tool} report {scan_import.source_filename}.",
-            metadata={
+            safe_metadata={
                 "source_tool": scan_import.source_tool,
                 "source_filename": scan_import.source_filename,
                 "observations_created": created_count,

@@ -62,11 +62,25 @@ def promote_observation_to_finding(
         actor=actor,
         client=observation.assessment.client,
         assessment=observation.assessment,
+        action=AuditLog.Action.FINDING_CREATED,
+        entity_type="FINDING",
+        entity_id=finding.id,
+        summary=f"Finding created from observation {observation.id}.",
+        safe_metadata={
+            "finding_id": finding.id,
+            "scanner_observation_id": observation.id,
+            "severity": finding.severity,
+        },
+    )
+    record_audit_event(
+        actor=actor,
+        client=observation.assessment.client,
+        assessment=observation.assessment,
         action=AuditLog.Action.OBSERVATION_PROMOTED,
-        entity_type="Finding",
+        entity_type="FINDING",
         entity_id=finding.id,
         summary=f"Observation promoted to finding {finding.title}.",
-        metadata={
+        safe_metadata={
             "finding_id": finding.id,
             "scanner_observation_id": observation.id,
             "severity": finding.severity,

@@ -66,9 +66,9 @@ def triage_observation(
         client=observation.assessment.client,
         assessment=observation.assessment,
         action=AuditLog.Action.OBSERVATION_TRIAGED,
-        entity_type="ScannerObservation",
+        entity_type="OBSERVATION",
         entity_id=observation.id,
         summary=f"Observation triaged as {triage_status}.",
-        metadata={"triage_status": triage_status, "duplicate_of_id": duplicate_of.id if duplicate_of else None},
+        safe_metadata={"triage_status": triage_status, "duplicate_of_id": duplicate_of.id if duplicate_of else None},
     )
     return observation
