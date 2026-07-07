@@ -41,6 +41,53 @@ class ScanImport(models.Model):
         return f"{self.source_tool} import {self.id} for assessment {self.assessment_id}"
 
 
+class ImportPreview(models.Model):
+    assessment = models.ForeignKey(
+        "assessments.Assessment",
+        on_delete=models.CASCADE,
+        related_name="import_previews",
+    )
+    source_tool = models.CharField(max_length=20, choices=ScanImport.SourceTool.choices)
+    source_filename = models.CharField(max_length=255)
+    file_sha256 = models.CharField(max_length=64)
+    file_size_bytes = models.PositiveIntegerField()
+    parser_version = models.CharField(max_length=80, blank=True)
+    safe_observations = models.JSONField(default=list, blank=True)
+    observation_count = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="import_previews",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(db_index=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="confirmed_import_previews",
+    )
+    scan_import = models.OneToOneField(
+        ScanImport,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="import_preview",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["assessment", "-created_at"]),
+            models.Index(fields=["created_by", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.source_tool} preview {self.id} for assessment {self.assessment_id}"
+
+
 class ScannerObservation(models.Model):
     class TriageStatus(models.TextChoices):
         NEW = "NEW", "New"

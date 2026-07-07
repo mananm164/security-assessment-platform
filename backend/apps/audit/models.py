@@ -5,6 +5,8 @@ from django.db import models
 class AuditLog(models.Model):
     class Action(models.TextChoices):
         SCAN_IMPORT_CREATED = "SCAN_IMPORT_CREATED", "Scan import created"
+        IMPORT_PREVIEW_CREATED = "IMPORT_PREVIEW_CREATED", "Import preview created"
+        IMPORT_CONFIRMED = "IMPORT_CONFIRMED", "Import confirmed"
         OBSERVATION_TRIAGED = "OBSERVATION_TRIAGED", "Observation triaged"
         OBSERVATION_PROMOTED = "OBSERVATION_PROMOTED", "Observation promoted"
         FINDING_CREATED = "FINDING_CREATED", "Finding created"

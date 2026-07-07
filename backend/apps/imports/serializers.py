@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import ScanImport, ScannerObservation
+from .models import ImportPreview, ScanImport, ScannerObservation
 
 
 class ScanImportSerializer(serializers.ModelSerializer):
@@ -62,6 +62,54 @@ class ScannerObservationSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = fields
+
+
+class ImportPreviewSerializer(serializers.ModelSerializer):
+    summary = serializers.SerializerMethodField()
+    observations = serializers.SerializerMethodField()
+    created_by = serializers.StringRelatedField(read_only=True)
+    confirmed_by = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = ImportPreview
+        fields = (
+            "id",
+            "assessment",
+            "source_tool",
+            "source_filename",
+            "file_sha256",
+            "file_size_bytes",
+            "parser_version",
+            "observation_count",
+            "created_by",
+            "created_at",
+            "expires_at",
+            "confirmed_at",
+            "confirmed_by",
+            "scan_import",
+            "summary",
+            "observations",
+        )
+        read_only_fields = fields
+
+    def get_summary(self, obj):
+        from .services.preview_service import preview_summary
+
+        return preview_summary(obj)
+
+    def get_observations(self, obj):
+        from .services.preview_service import preview_observation_sample
+
+        return preview_observation_sample(obj)
+
+
+class ImportPreviewConfirmSerializer(serializers.Serializer):
+    scan_import_id = serializers.IntegerField()
+    assessment = serializers.IntegerField()
+    source_tool = serializers.CharField()
+    observations_created = serializers.IntegerField()
+    observations_reobserved = serializers.IntegerField()
+    detail_url = serializers.CharField()
 
 
 class ObservationTriageSerializer(serializers.Serializer):

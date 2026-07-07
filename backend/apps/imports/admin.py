@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import FindingSource, ScanImport, ScanImportObservation, ScannerObservation
+from .models import FindingSource, ImportPreview, ScanImport, ScanImportObservation, ScannerObservation
 
 
 @admin.register(ScanImport)
@@ -26,3 +26,11 @@ class ScanImportObservationAdmin(admin.ModelAdmin):
 @admin.register(FindingSource)
 class FindingSourceAdmin(admin.ModelAdmin):
     list_display = ("finding", "scanner_observation", "first_seen_at", "last_seen_at")
+
+
+@admin.register(ImportPreview)
+class ImportPreviewAdmin(admin.ModelAdmin):
+    list_display = ("id", "assessment", "source_tool", "source_filename", "observation_count", "created_by", "expires_at", "confirmed_at")
+    list_filter = ("source_tool", "confirmed_at")
+    search_fields = ("source_filename", "file_sha256", "assessment__name")
+    readonly_fields = ("safe_observations",)

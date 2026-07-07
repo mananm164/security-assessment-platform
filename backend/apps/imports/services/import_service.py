@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import ipaddress
+from dataclasses import dataclass
 from pathlib import Path
 
 from django.conf import settings
@@ -20,6 +21,13 @@ from ..parsers.burp import BurpXmlImporter
 from ..parsers.nessus import NessusXmlImporter
 from ..parsers.nmap import NmapXmlImporter
 from ..parsers.zap import ZapJsonImporter
+
+
+@dataclass(frozen=True)
+class ImportResult:
+    scan_import: ScanImport
+    observations_created: int
+    observations_reobserved: int
 
 
 def parser_for_tool(tool: str):
@@ -89,11 +97,34 @@ def import_report(
     parser.validate(content, safe_filename)
     observations = parser.parse(content)
     file_sha256 = hashlib.sha256(content).hexdigest()
+    result = persist_normalised_import(
+        assessment=assessment,
+        actor=actor,
+        source_tool=parser.source_tool,
+        source_filename=safe_filename,
+        file_sha256=file_sha256,
+        observations=observations,
+    )
+    return result.scan_import
 
+
+def persist_normalised_import(
+    *,
+    assessment: Assessment,
+    actor,
+    source_tool: str,
+    source_filename: str,
+    file_sha256: str,
+    observations: list[NormalisedObservation],
+) -> ImportResult:
+    if not can_write_client_records(actor, assessment.client):
+        raise ImportValidationError("Actor is not authorised to import into this assessment.")
+
+    safe_filename = Path(source_filename).name
     with transaction.atomic():
         scan_import = ScanImport.objects.create(
             assessment=assessment,
-            source_tool=parser.source_tool,
+            source_tool=source_tool,
             source_filename=safe_filename,
             file_sha256=file_sha256,
             imported_by=actor,
@@ -111,7 +142,7 @@ def import_report(
                 fingerprint=fingerprint,
                 defaults={
                     "asset": asset,
-                    "source_tool": parser.source_tool,
+                    "source_tool": source_tool,
                     "external_id": observation.external_id,
                     "scanner_plugin_id": observation.scanner_plugin_id or "",
                     "title": observation.title,
@@ -187,13 +218,19 @@ def import_report(
             entity_id=scan_import.id,
             summary=f"Imported {scan_import.source_tool} report {scan_import.source_filename}.",
             safe_metadata={
+                "assessment_id": assessment.id,
                 "source_tool": scan_import.source_tool,
                 "source_filename": scan_import.source_filename,
+                "file_sha256": scan_import.file_sha256,
                 "observations_created": created_count,
                 "observations_updated": updated_count,
             },
         )
-        return scan_import
+        return ImportResult(
+            scan_import=scan_import,
+            observations_created=created_count,
+            observations_reobserved=updated_count,
+        )
 
 
 def match_or_create_asset(*, assessment: Assessment, observation: NormalisedObservation) -> Asset | None:
