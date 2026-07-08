@@ -1,4 +1,5 @@
 """Root URL configuration for the SARP API."""
+
 from django.contrib import admin
 
 from apps.accounts.views import HealthView

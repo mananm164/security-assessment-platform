@@ -1,4 +1,5 @@
 """Django settings for the SARP API."""
+
 from datetime import timedelta
 from pathlib import Path
 
@@ -89,16 +90,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DEV_SEED_EMAIL = env("DEV_SEED_EMAIL", default="consultant@sarp.local")
 DEV_SEED_PASSWORD = env("DEV_SEED_PASSWORD", default="replace-me")
 MAX_IMPORT_FILE_SIZE_BYTES = env.int("MAX_IMPORT_FILE_SIZE_BYTES", default=5 * 1024 * 1024)
+E2E_TEST_MODE = env("E2E_TEST_MODE", default="0")
+E2E_TEST_PASSWORD = env("E2E_TEST_PASSWORD", default="")
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
 }
@@ -120,5 +119,7 @@ OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="http://host.docker.internal:11
 INTELLIGENCE_CACHE_TTL_HOURS = env.int("INTELLIGENCE_CACHE_TTL_HOURS", default=24)
 NVD_API_KEY = env("NVD_API_KEY", default="")
 NVD_API_BASE_URL = env("NVD_API_BASE_URL", default="https://services.nvd.nist.gov/rest/json/cves/2.0")
-CISA_KEV_URL = env("CISA_KEV_URL", default="https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json")
+CISA_KEV_URL = env(
+    "CISA_KEV_URL", default="https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+)
 EPSS_API_BASE_URL = env("EPSS_API_BASE_URL", default="https://api.first.org/data/v1/epss")

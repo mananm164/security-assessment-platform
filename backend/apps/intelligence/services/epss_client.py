@@ -33,9 +33,11 @@ class EpssClient:
         if not rows:
             return EpssResult(None, None)
         row = rows[0]
+
         def decimal_or_none(value):
             try:
                 return Decimal(str(value))
             except (InvalidOperation, TypeError):
                 return None
+
         return EpssResult(decimal_or_none(row.get("epss")), decimal_or_none(row.get("percentile")))

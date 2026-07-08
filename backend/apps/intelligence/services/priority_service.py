@@ -66,7 +66,10 @@ class PriorityService:
             parts.append("high EPSS likelihood")
         elif explanation["epss_points"] > 0:
             parts.append("elevated EPSS likelihood")
-        if finding.affected_asset and finding.affected_asset.criticality in {Asset.Criticality.CRITICAL, Asset.Criticality.HIGH}:
+        if finding.affected_asset and finding.affected_asset.criticality in {
+            Asset.Criticality.CRITICAL,
+            Asset.Criticality.HIGH,
+        }:
             parts.append(f"{finding.affected_asset.criticality.lower()} asset criticality")
         if finding.affected_asset and finding.affected_asset.internet_exposed:
             parts.append("internet exposure")
@@ -81,12 +84,14 @@ class PriorityService:
         finding.priority_explanation = explanation
         finding.priority_reason = cls.reason(finding, intel, explanation)
         finding.priority_computed_at = timezone.now()
-        finding.save(update_fields=[
-            "priority_score",
-            "priority_label",
-            "priority_explanation",
-            "priority_reason",
-            "priority_computed_at",
-            "updated_at",
-        ])
+        finding.save(
+            update_fields=[
+                "priority_score",
+                "priority_label",
+                "priority_explanation",
+                "priority_reason",
+                "priority_computed_at",
+                "updated_at",
+            ]
+        )
         return finding

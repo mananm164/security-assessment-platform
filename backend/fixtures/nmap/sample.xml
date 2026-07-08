@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<nmaprun scanner="nmap" args="nmap -oX sample.xml 192.0.2.10">
+<nmaprun scanner="nmap" args="nmap -oX sample.xml --script-args fake_token=E2E_FAKE_SECRET_DO_NOT_RENDER 192.0.2.10">
   <host>
     <status state="up" reason="syn-ack"/>
     <address addr="192.0.2.10" addrtype="ipv4"/>

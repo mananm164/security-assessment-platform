@@ -51,7 +51,22 @@ class FindingSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "severity", "priority_score", "priority_label", "priority_explanation", "priority_reason", "priority_computed_at", "validated_by", "validated_at", "risk_accepted_by", "risk_accepted_at", "created_by", "created_at", "updated_at")
+        read_only_fields = (
+            "id",
+            "severity",
+            "priority_score",
+            "priority_label",
+            "priority_explanation",
+            "priority_reason",
+            "priority_computed_at",
+            "validated_by",
+            "validated_at",
+            "risk_accepted_by",
+            "risk_accepted_at",
+            "created_by",
+            "created_at",
+            "updated_at",
+        )
 
     def validate_cvss_score(self, value):
         if value < Decimal("0.0") or value > Decimal("10.0"):

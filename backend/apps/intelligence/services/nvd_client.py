@@ -39,7 +39,7 @@ class NvdClient:
         vulnerabilities = payload.get("vulnerabilities") or []
         if not vulnerabilities:
             return NvdResult("", None, "", [], [])
-        cve = (vulnerabilities[0].get("cve") or {})
+        cve = vulnerabilities[0].get("cve") or {}
         descriptions = cve.get("descriptions") or []
         description = next((item.get("value", "") for item in descriptions if item.get("lang") == "en"), "")
         metrics = cve.get("metrics") or {}

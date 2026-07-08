@@ -105,10 +105,7 @@ class NmapXmlImporter(BaseImporter):
                             hostname=hostname,
                             port=port,
                             protocol=protocol,
-                            description=(
-                                f"Nmap NSE script {script_id} returned output for "
-                                f"{protocol.upper()}/{port}."
-                            ),
+                            description=(f"Nmap NSE script {script_id} returned output for {protocol.upper()}/{port}."),
                             evidence_summary=script_output,
                             scanner_plugin_id=script_id,
                             raw_location=location,

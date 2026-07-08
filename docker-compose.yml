@@ -17,7 +17,8 @@ services:
     build:
       context: ./backend
     env_file:
-      - .env
+      - path: .env
+        required: false
     ports:
       - "8000:8000"
     volumes:
@@ -26,6 +27,11 @@ services:
       db:
         condition: service_healthy
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+  frontend:
+    build:
+      context: ./frontend
+    profiles: ["build"]
 
 volumes:
   postgres_data:

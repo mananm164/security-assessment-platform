@@ -5,7 +5,16 @@ from .models import FindingSource, ImportPreview, ScanImport, ScanImportObservat
 
 @admin.register(ScanImport)
 class ScanImportAdmin(admin.ModelAdmin):
-    list_display = ("id", "assessment", "source_tool", "status", "imported_by", "observations_created", "observations_updated", "created_at")
+    list_display = (
+        "id",
+        "assessment",
+        "source_tool",
+        "status",
+        "imported_by",
+        "observations_created",
+        "observations_updated",
+        "created_at",
+    )
     list_filter = ("source_tool", "status")
     search_fields = ("source_filename", "file_sha256", "assessment__name")
 
@@ -30,7 +39,16 @@ class FindingSourceAdmin(admin.ModelAdmin):
 
 @admin.register(ImportPreview)
 class ImportPreviewAdmin(admin.ModelAdmin):
-    list_display = ("id", "assessment", "source_tool", "source_filename", "observation_count", "created_by", "expires_at", "confirmed_at")
+    list_display = (
+        "id",
+        "assessment",
+        "source_tool",
+        "source_filename",
+        "observation_count",
+        "created_by",
+        "expires_at",
+        "confirmed_at",
+    )
     list_filter = ("source_tool", "confirmed_at")
     search_fields = ("source_filename", "file_sha256", "assessment__name")
     readonly_fields = ("safe_observations",)

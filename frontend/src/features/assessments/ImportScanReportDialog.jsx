@@ -136,7 +136,7 @@ export default function ImportScanReportDialog({ open, assessmentId, onClose, on
             </Stack>
           ) : (
             <Stack spacing={2}>
-              <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ alignItems: 'center' }}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                 <SourceToolChip value={preview.source_tool} />
                 <Chip size="small" label={preview.source_filename} variant="outlined" />
                 <Chip size="small" label={formatBytes(preview.file_size_bytes)} variant="outlined" />

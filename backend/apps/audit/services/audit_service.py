@@ -42,7 +42,18 @@ SAFE_METADATA_KEYS = {
     "validated_by_id",
     "risk_accepted_by_id",
 }
-UNSAFE_KEY_MARKERS = {"password", "token", "secret", "cookie", "authorization", "jwt", "session", "prompt", "payload", "raw"}
+UNSAFE_KEY_MARKERS = {
+    "password",
+    "token",
+    "secret",
+    "cookie",
+    "authorization",
+    "jwt",
+    "session",
+    "prompt",
+    "payload",
+    "raw",
+}
 
 
 def _safe_value(value: Any) -> Any:

@@ -19,6 +19,8 @@ class Command(BaseCommand):
         if not directory.exists():
             raise CommandError(f"Knowledge base directory not found: {directory}")
         result = KnowledgeIngestionService().ingest_directory(directory)
-        self.stdout.write(self.style.SUCCESS(
-            f"Ingested {result['documents_seen']} documents; {result['documents_changed']} changed; {result['chunks_written']} chunks written."
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Ingested {result['documents_seen']} documents; {result['documents_changed']} changed; {result['chunks_written']} chunks written."
+            )
+        )

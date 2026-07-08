@@ -1,0 +1,3 @@
+# PR-only dependency review policy. Keep license restrictions out until the
+# project has an approved license policy. High and critical vulnerabilities fail.
+fail-on-severity: high

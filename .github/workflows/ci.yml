@@ -1,0 +1,194 @@
+name: CI Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_DB: sarp_ci
+          POSTGRES_USER: sarp_ci
+          POSTGRES_PASSWORD: sarp_ci_password # pragma: allowlist secret - fictional CI database password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sarp_ci -d sarp_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DJANGO_SECRET_KEY: ci-only-insecure-secret-key # pragma: allowlist secret - fictional CI key
+      DJANGO_DEBUG: "False"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgresql://sarp_ci:sarp_ci_password@127.0.0.1:5432/sarp_ci # pragma: allowlist secret - fictional CI database URL
+      AI_PROVIDER: mock
+      EMBEDDING_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements/dev.txt
+      - name: Install backend dependencies
+        working-directory: backend
+        run: python -m pip install -r requirements/dev.txt
+      - name: Django checks
+        working-directory: backend
+        run: python manage.py check
+      - name: Check migrations are committed
+        working-directory: backend
+        run: python manage.py makemigrations --check --dry-run
+      - name: Apply migrations
+        working-directory: backend
+        run: python manage.py migrate --noinput
+      - name: Run backend tests
+        working-directory: backend
+        run: python manage.py test
+      - name: Ruff lint
+        working-directory: backend
+        run: ruff check apps config
+      - name: Ruff format check
+        working-directory: backend
+        run: ruff format --check apps config
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm run test -- --run
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      POSTGRES_DB: sarp_e2e
+      POSTGRES_USER: sarp_e2e
+      POSTGRES_PASSWORD: sarp_e2e_password # pragma: allowlist secret - fictional E2E database password
+      DATABASE_URL: postgresql://sarp_e2e:sarp_e2e_password@db:5432/sarp_e2e # pragma: allowlist secret - fictional E2E database URL
+      E2E_TEST_MODE: "1"
+      E2E_TEST_PASSWORD: sarp-e2e-${{ github.run_id }}-${{ github.run_attempt }} # pragma: allowlist secret - generated test-only value
+      VITE_API_BASE_URL: http://127.0.0.1:8000/api/v1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Start disposable E2E stack
+        run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build db backend
+      - name: Wait for backend readiness
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+      - name: Apply migrations
+        run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml exec -T backend python manage.py migrate --noinput
+      - name: Seed fictional E2E data
+        run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml exec -T backend python manage.py seed_e2e_data
+      - name: Run Playwright E2E tests
+        working-directory: frontend
+        run: npm run e2e
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+      - name: Upload Playwright test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: frontend/test-results/
+          retention-days: 7
+      - name: Tear down E2E stack
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v --remove-orphans
+
+  security-dependencies:
+    name: security-dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements/dev.txt
+      - name: Install Python audit tooling
+        run: python -m pip install -r backend/requirements/dev.txt
+      - name: Audit Python dependencies
+        run: pip-audit -r backend/requirements/base.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependency tree
+        working-directory: frontend
+        run: npm ci
+      - name: Audit production Node dependencies
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
+
+  docker-build:
+    name: docker-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      POSTGRES_DB: sarp_build
+      POSTGRES_USER: sarp_build
+      POSTGRES_PASSWORD: sarp_build_password # pragma: allowlist secret - fictional build-only value
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build backend and frontend images
+        run: docker compose build backend frontend

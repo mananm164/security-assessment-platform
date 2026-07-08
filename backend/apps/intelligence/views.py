@@ -4,7 +4,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.models import User
 from apps.audit.models import AuditLog
 from apps.audit.services import record_audit_event
 from apps.tenancy.selectors import can_write_client_records, user_is_admin
@@ -53,5 +52,7 @@ class RefreshFindingIntelligenceView(FindingIntelligenceView):
                 "used_cache": result.used_cache,
             },
         )
-        serializer = FindingIntelligenceSerializer({"finding": finding, "intelligence": result.intel, "used_cache": result.used_cache})
+        serializer = FindingIntelligenceSerializer(
+            {"finding": finding, "intelligence": result.intel, "used_cache": result.used_cache}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)

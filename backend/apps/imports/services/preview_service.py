@@ -15,7 +15,7 @@ from apps.audit.services import record_audit_event
 from apps.common.exceptions import ImportValidationError
 from apps.tenancy.selectors import can_write_client_records, user_is_admin, visible_clients_for
 
-from ..models import ImportPreview, ScanImport
+from ..models import ImportPreview
 from ..parsers.base import NormalisedObservation
 from .import_service import ImportResult, parser_for_tool, persist_normalised_import
 
@@ -74,9 +74,7 @@ def create_import_preview(*, actor, assessment, source_tool: str, upload) -> Imp
         raise ImportValidationError("The selected report could not be validated.")
 
     if len(observations) > MAX_PREVIEW_OBSERVATIONS:
-        raise ImportValidationError(
-            f"The selected report has more than {MAX_PREVIEW_OBSERVATIONS} observations."
-        )
+        raise ImportValidationError(f"The selected report has more than {MAX_PREVIEW_OBSERVATIONS} observations.")
 
     safe_observations = [_observation_to_safe_dict(observation) for observation in observations]
     preview = ImportPreview.objects.create(
@@ -187,11 +185,7 @@ def confirm_import_preview(*, actor, preview: ImportPreview) -> ImportResult:
 
 
 def preview_summary(preview: ImportPreview) -> dict:
-    assets = {
-        _asset_label(item)
-        for item in preview.safe_observations
-        if _asset_label(item)
-    }
+    assets = {_asset_label(item) for item in preview.safe_observations if _asset_label(item)}
     return {
         "total_observations": preview.observation_count,
         "assets_detected": len(assets),

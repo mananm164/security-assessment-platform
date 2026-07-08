@@ -39,7 +39,7 @@ export default function LoginPage() {
             <Stack spacing={2.5}>
               {error ? <Alert severity="error" aria-live="polite">{error}</Alert> : null}
               <TextField label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
-              <TextField label="Password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} required autoComplete="current-password" InputProps={{ endAdornment: <InputAdornment position="end"><IconButton aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((value) => !value)} edge="end">{showPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment> }} />
+              <TextField label="Password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} required autoComplete="current-password" slotProps={{ input: { endAdornment: <InputAdornment position="end"><IconButton aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((value) => !value)} edge="end">{showPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment> } }} />
               <Button type="submit" variant="contained" size="large" disabled={loading || !email || !password}>{loading ? 'Signing in...' : 'Sign in'}</Button>
               <Typography variant="caption" color="text.secondary">Use fictional demo data only. Browser refresh clears the in-memory session.</Typography>
             </Stack>

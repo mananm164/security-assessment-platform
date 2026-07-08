@@ -2,7 +2,6 @@ from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 
-from .models import Client
 from .selectors import can_manage_clients, visible_clients_for
 from .serializers import ClientSerializer
 

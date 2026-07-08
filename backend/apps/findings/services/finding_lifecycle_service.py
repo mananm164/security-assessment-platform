@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import date
 from typing import Any
 
 from django.db import transaction
@@ -90,14 +89,16 @@ def update_finding_lifecycle(*, finding: Finding, actor, changes: dict[str, Any]
     if not changed_fields:
         return finding
 
-    finding.save(update_fields=[
-        *changed_fields,
-        "validated_by",
-        "validated_at",
-        "risk_accepted_by",
-        "risk_accepted_at",
-        "updated_at",
-    ])
+    finding.save(
+        update_fields=[
+            *changed_fields,
+            "validated_by",
+            "validated_at",
+            "risk_accepted_by",
+            "risk_accepted_at",
+            "updated_at",
+        ]
+    )
 
     metadata = {
         "changed_fields": changed_fields,
@@ -189,6 +190,9 @@ def update_finding_lifecycle(*, finding: Finding, actor, changes: dict[str, Any]
             entity_type="FINDING",
             entity_id=finding.id,
             summary="Finding due date changed.",
-            safe_metadata={"old_due_date": _date_or_none(old_due_date), "new_due_date": _date_or_none(finding.due_date)},
+            safe_metadata={
+                "old_due_date": _date_or_none(old_due_date),
+                "new_due_date": _date_or_none(finding.due_date),
+            },
         )
     return finding

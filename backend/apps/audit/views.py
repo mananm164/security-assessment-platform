@@ -1,7 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from .models import AuditLog
 from .selectors import visible_audit_logs_for
 from .serializers import AuditLogSerializer
 

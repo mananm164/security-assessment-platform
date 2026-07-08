@@ -7,11 +7,7 @@ User = get_user_model()
 
 
 def user_is_admin(user) -> bool:
-    return bool(
-        user
-        and user.is_authenticated
-        and (user.role == User.Role.ADMIN or user.is_superuser)
-    )
+    return bool(user and user.is_authenticated and (user.role == User.Role.ADMIN or user.is_superuser))
 
 
 def visible_clients_for(user) -> QuerySet[Client]:

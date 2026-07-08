@@ -4,7 +4,6 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.tenancy.selectors import can_write_client_records
 
-from .models import Asset, Assessment
 from .selectors import visible_assets_for, visible_assessments_for
 from .serializers import AssetSerializer, AssessmentSerializer
 

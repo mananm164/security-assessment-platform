@@ -10,3 +10,8 @@ coverage/
 htmlcov/
 .pytest_cache/
 .DS_Store
+.ruff_cache/
+playwright-report/
+test-results/
+frontend/playwright-report/
+frontend/test-results/

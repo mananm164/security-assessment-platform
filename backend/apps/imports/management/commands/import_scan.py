@@ -46,9 +46,7 @@ class Command(BaseCommand):
             raise CommandError(f"Import failed: {exc}") from exc
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Imported {scan_import.source_tool.title()} report into assessment {assessment.id}."
-            )
+            self.style.SUCCESS(f"Imported {scan_import.source_tool.title()} report into assessment {assessment.id}.")
         )
         self.stdout.write(f"Import ID: {scan_import.id}")
         self.stdout.write(f"Observations created: {scan_import.observations_created}")

@@ -13,9 +13,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = "email"
-    default_error_messages = {
-        "no_active_account": "Unable to authenticate with the provided credentials."
-    }
+    default_error_messages = {"no_active_account": "Unable to authenticate with the provided credentials."}
 
     def validate(self, attrs):
         authenticate_kwargs = {

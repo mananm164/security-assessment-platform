@@ -33,7 +33,9 @@ class KnowledgeChunk(models.Model):
     class Meta:
         ordering = ["document", "chunk_index"]
         constraints = [
-            models.UniqueConstraint(fields=["document", "chunk_index", "content_hash"], name="unique_knowledge_chunk_content")
+            models.UniqueConstraint(
+                fields=["document", "chunk_index", "content_hash"], name="unique_knowledge_chunk_content"
+            )
         ]
 
     def __str__(self) -> str:

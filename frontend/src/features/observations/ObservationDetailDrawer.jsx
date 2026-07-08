@@ -18,7 +18,7 @@ export default function ObservationDetailDrawer({ open, observation, role, onClo
           <Stack spacing={2}>
             <Box><Typography variant="h6">{observation.title}</Typography><StatusChip value={observation.triage_status} /></Box>
             <Divider />
-            <Stack direction="row" spacing={1} flexWrap="wrap"><SourceToolChip value={observation.source_tool} /><SeverityChip value={observation.raw_severity} />{observation.confidence ? <Chip size="small" label={`${observation.confidence} confidence`} variant="outlined" /> : null}</Stack>
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}><SourceToolChip value={observation.source_tool} /><SeverityChip value={observation.raw_severity} />{observation.confidence ? <Chip size="small" label={`${observation.confidence} confidence`} variant="outlined" /> : null}</Stack>
             <Field label="Asset/location" value={observation.raw_location || observation.url || (observation.asset ? `Asset #${observation.asset}` : '')} />
             <Field label="Evidence summary" value={observation.evidence_summary} />
             <Field label="Suggested remediation" value={observation.suggested_remediation} />

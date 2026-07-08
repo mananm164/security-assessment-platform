@@ -217,10 +217,13 @@ class NessusXmlImporter(BaseImporter):
         return normalise_cvss(self._child_text(item, "cvss3_base_score") or self._child_text(item, "cvss_base_score"))
 
     def _candidate_vector(self, item) -> str | None:
-        return sanitise_evidence(
-            self._child_text(item, "cvss3_vector") or self._child_text(item, "cvss_vector"),
-            max_length=120,
-        ) or None
+        return (
+            sanitise_evidence(
+                self._child_text(item, "cvss3_vector") or self._child_text(item, "cvss_vector"),
+                max_length=120,
+            )
+            or None
+        )
 
     def _location(self, host_identity: str, port: int | None, protocol: str, service_name: str) -> str:
         port_text = str(port) if port is not None else "unknown"

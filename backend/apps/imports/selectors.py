@@ -15,14 +15,14 @@ def can_read_raw_imports(user) -> bool:
 def visible_imports_for(user) -> QuerySet[ScanImport]:
     if not can_read_raw_imports(user):
         return ScanImport.objects.none()
-    return ScanImport.objects.filter(
-        assessment__client__in=visible_clients_for(user)
-    ).select_related("assessment", "assessment__client", "imported_by")
+    return ScanImport.objects.filter(assessment__client__in=visible_clients_for(user)).select_related(
+        "assessment", "assessment__client", "imported_by"
+    )
 
 
 def visible_observations_for(user) -> QuerySet[ScannerObservation]:
     if not can_read_raw_imports(user):
         return ScannerObservation.objects.none()
-    return ScannerObservation.objects.filter(
-        assessment__client__in=visible_clients_for(user)
-    ).select_related("assessment", "assessment__client", "asset", "last_seen_import")
+    return ScannerObservation.objects.filter(assessment__client__in=visible_clients_for(user)).select_related(
+        "assessment", "assessment__client", "asset", "last_seen_import"
+    )

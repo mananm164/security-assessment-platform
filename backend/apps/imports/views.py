@@ -10,7 +10,7 @@ from apps.common.exceptions import ImportValidationError
 from apps.findings.serializers import FindingSerializer
 from apps.tenancy.selectors import visible_clients_for
 
-from .models import ImportPreview, ScanImport
+from .models import ImportPreview
 from .selectors import visible_imports_for, visible_observations_for
 from .serializers import (
     ImportPreviewConfirmSerializer,

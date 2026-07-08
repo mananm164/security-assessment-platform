@@ -16,11 +16,13 @@ def safe_finding_context(finding) -> dict:
     source_summaries = []
     for source in finding.sources.select_related("scanner_observation").all()[:3]:
         observation = source.scanner_observation
-        source_summaries.append({
-            "source_tool": observation.source_tool,
-            "title": observation.title[:255],
-            "summary": observation.evidence_summary[:500],
-        })
+        source_summaries.append(
+            {
+                "source_tool": observation.source_tool,
+                "title": observation.title[:255],
+                "summary": observation.evidence_summary[:500],
+            }
+        )
     asset = finding.affected_asset
     return {
         "title": finding.title[:255],
@@ -46,9 +48,17 @@ class RemediationService:
     @transaction.atomic
     def generate(self, *, finding, actor) -> AIArtifact:
         context = safe_finding_context(finding)
-        query = " ".join(str(value) for value in [
-            context["title"], context["description"], context["cve_id"], context["affected_asset_type"], finding.remediation,
-        ] if value)
+        query = " ".join(
+            str(value)
+            for value in [
+                context["title"],
+                context["description"],
+                context["cve_id"],
+                context["affected_asset_type"],
+                finding.remediation,
+            ]
+            if value
+        )
         chunks = self.retrieval_service.retrieve(query, limit=3)
         if not chunks:
             raise ValidationError("No active knowledge base guidance is available for remediation drafting.")

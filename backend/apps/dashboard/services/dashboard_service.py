@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -34,17 +34,15 @@ def dashboard_summary_for(user) -> dict:
         .order_by("scanner_observation__source_tool")
     )
     recent_imports = list(imports.order_by("-created_at")[:5]) if internal else []
-    top_priority = list(
-        findings.order_by("-priority_score", "-cvss_score", "-updated_at")[:5]
-    )
+    top_priority = list(findings.order_by("-priority_score", "-cvss_score", "-updated_at")[:5])
     recent_activity = list(visible_audit_logs_for(user).order_by("-created_at")[:8]) if internal else []
 
     response = {
         "metrics": {
             "open_findings": active_findings.count(),
-            "critical_high_findings": findings.filter(
-                severity__in=[Finding.Severity.CRITICAL, Finding.Severity.HIGH]
-            ).exclude(status=Finding.Status.CLOSED).count(),
+            "critical_high_findings": findings.filter(severity__in=[Finding.Severity.CRITICAL, Finding.Severity.HIGH])
+            .exclude(status=Finding.Status.CLOSED)
+            .count(),
             "overdue_remediations": active_findings.filter(due_date__lt=today).count(),
             "recent_imports": len(recent_imports),
         },
@@ -105,7 +103,9 @@ def dashboard_summary_for(user) -> dict:
     response["critical_high_findings"] = response["metrics"]["critical_high_findings"]
     response["overdue_remediation"] = response["metrics"]["overdue_remediations"]
     response["findings_by_severity"] = {row["severity"]: row["count"] for row in response["severity_distribution"]}
-    response["findings_by_scanner_source"] = {row["source_tool"]: row["finding_count"] for row in response["source_distribution"]}
+    response["findings_by_scanner_source"] = {
+        row["source_tool"]: row["finding_count"] for row in response["source_distribution"]
+    }
     if not internal:
         response["recent_imports"] = []
     return response

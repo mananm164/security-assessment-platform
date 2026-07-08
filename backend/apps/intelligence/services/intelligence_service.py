@@ -75,7 +75,9 @@ class IntelligenceService:
                 existing.last_refresh_attempt_at = now
                 existing.last_refresh_status = VulnerabilityIntel.RefreshStatus.FAILED
                 existing.last_safe_error = "Public intelligence providers unavailable."
-                existing.save(update_fields=["last_refresh_attempt_at", "last_refresh_status", "last_safe_error", "updated_at"])
+                existing.save(
+                    update_fields=["last_refresh_attempt_at", "last_refresh_status", "last_safe_error", "updated_at"]
+                )
                 PriorityService.update_finding_priority(finding, existing)
                 return RefreshResult(existing, False)
             raise ValidationError("Public intelligence providers unavailable; no cached data exists.")
@@ -95,7 +97,9 @@ class IntelligenceService:
             intel.epss_percentile = epss.percentile
         intel.source_retrieved_at = now
         intel.last_refresh_attempt_at = now
-        intel.last_refresh_status = VulnerabilityIntel.RefreshStatus.PARTIAL if failures else VulnerabilityIntel.RefreshStatus.SUCCESS
+        intel.last_refresh_status = (
+            VulnerabilityIntel.RefreshStatus.PARTIAL if failures else VulnerabilityIntel.RefreshStatus.SUCCESS
+        )
         intel.last_safe_error = "; ".join(failures)[:255] if failures else ""
         intel.save()
         PriorityService.update_finding_priority(finding, intel)
